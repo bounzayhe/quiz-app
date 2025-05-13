@@ -18,30 +18,34 @@ export const getCompaniesWithStats = async (req, res) => {
         },
       },
       {
-        $project: {
-          fullname: 1,
-          logo: 1,
-          _id: 1,
+        $lookup: {
+          from: "questionnaires",
+          localField: "_id",
+          foreignField: "company_id",
+          as: "questionnaires",
         },
       },
       {
         $lookup: {
           from: "tentatives",
-          localField: "_id",
-          foreignField: "questionnaire_id",
+          let: { questionnaireIds: "$questionnaires._id" },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $in: ["$questionnaire_id", "$$questionnaireIds"],
+                },
+              },
+            },
+          ],
           as: "tentatives",
-        },
-      },
-      {
-        $addFields: {
-          clientCount: { $size: "$tentatives" },
         },
       },
       {
         $project: {
           fullname: 1,
           logo: 1,
-          clientCount: 1,
+          clientCount: { $size: "$tentatives" },
         },
       },
     ]);
