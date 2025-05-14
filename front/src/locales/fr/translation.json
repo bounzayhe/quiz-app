@@ -1,0 +1,96 @@
+
+{
+  "auth": {
+    "login": "Connexion",
+    "email": "Email",
+    "password": "Mot de passe",
+    "name": "Nom",
+    "signIn": "Se connecter",
+    "emailRequired": "L'email est requis",
+    "passwordRequired": "Le mot de passe est requis",
+    "nameRequired": "Le nom est requis",
+    "invalidEmail": "Adresse email invalide"
+  },
+  "navigation": {
+    "admins": "Administrateurs",
+    "companies": "Entreprises & Clients",
+    "surveyBuilder": "Créateur de sondage",
+    "logout": "Déconnexion",
+    "dashboard": "Tableau de bord"
+  },
+  "admins": {
+    "title": "Administrateurs",
+    "lastAccess": "Dernier Accès",
+    "addAdmin": "Ajouter un administrateur"
+  },
+  "companies": {
+    "title": "Entreprises & Clients",
+    "clients": "Clients",
+    "surveyResults": "Résultats des sondages",
+    "score": "Score",
+    "addCompany": "Ajouter une entreprise"
+  },
+  "surveyBuilder": {
+    "title": "Créateur de sondage",
+    "step1": "Informations de l'entreprise",
+    "step2": "Contenu du sondage",
+    "step3": "Résumé",
+    "next": "Suivant",
+    "previous": "Précédent",
+    "companyName": "Nom de l'entreprise",
+    "phoneNumber": "Numéro de téléphone",
+    "email": "Email",
+    "representativeName": "Nom du représentant",
+    "logoUpload": "Téléchargement du logo",
+    "uploadLogo": "Télécharger un logo",
+    "primaryColor": "Couleur primaire",
+    "secondaryColor": "Couleur secondaire",
+    "backgroundColor": "Couleur de fond",
+    "sections": "Sections",
+    "addSection": "Ajouter une section",
+    "sectionTitle": "Titre de la section",
+    "questions": "Questions",
+    "addQuestion": "Ajouter une question",
+    "questionTitle": "Titre de la question",
+    "questionType": "Type de question",
+    "radio": "Choix multiple",
+    "text": "Saisie de texte",
+    "answers": "Réponses",
+    "addAnswer": "Ajouter une réponse",
+    "answerText": "Texte de la réponse",
+    "score": "Score",
+    "explanation": "Explication",
+    "detail": "Détail",
+    "edit": "Modifier",
+    "delete": "Supprimer",
+    "cancel": "Annuler",
+    "save": "Enregistrer",
+    "summary": "Résumé",
+    "generateSurvey": "Générer le sondage",
+    "imageUpload": "Téléchargement d'image",
+    "uploadImage": "Télécharger une image"
+  },
+  "common": {
+    "loading": "Chargement...",
+    "error": "Une erreur est survenue",
+    "success": "Succès !",
+    "required": "Obligatoire",
+    "invalidFormat": "Format invalide",
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "edit": "Modifier",
+    "delete": "Supprimer",
+    "add": "Ajouter",
+    "language": "Langue",
+    "english": "Anglais",
+    "french": "Français"
+  },
+  "companyDashboard": {
+    "title": "Tableau de bord d'entreprise",
+    "clients": "Clients",
+    "surveys": "Sondages",
+    "viewDetails": "Voir les détails",
+    "completed": "Terminé",
+    "pending": "En attente"
+  }
+}

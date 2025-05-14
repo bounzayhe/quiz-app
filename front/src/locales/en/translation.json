@@ -1,0 +1,96 @@
+
+{
+  "auth": {
+    "login": "Login",
+    "email": "Email",
+    "password": "Password",
+    "name": "Name",
+    "signIn": "Sign In",
+    "emailRequired": "Email is required",
+    "passwordRequired": "Password is required",
+    "nameRequired": "Name is required",
+    "invalidEmail": "Invalid email address"
+  },
+  "navigation": {
+    "admins": "Admins",
+    "companies": "Companies & Clients",
+    "surveyBuilder": "Survey Builder",
+    "logout": "Logout",
+    "dashboard": "Dashboard"
+  },
+  "admins": {
+    "title": "Admins",
+    "lastAccess": "Last Access",
+    "addAdmin": "Add Admin"
+  },
+  "companies": {
+    "title": "Companies & Clients",
+    "clients": "Clients",
+    "surveyResults": "Survey Results",
+    "score": "Score",
+    "addCompany": "Add Company"
+  },
+  "surveyBuilder": {
+    "title": "Survey Builder",
+    "step1": "Company Info",
+    "step2": "Survey Content",
+    "step3": "Summary",
+    "next": "Next",
+    "previous": "Previous",
+    "companyName": "Company Name",
+    "phoneNumber": "Phone Number",
+    "email": "Email",
+    "representativeName": "Representative Name",
+    "logoUpload": "Logo Upload",
+    "uploadLogo": "Upload Logo",
+    "primaryColor": "Primary Color",
+    "secondaryColor": "Secondary Color",
+    "backgroundColor": "Background Color",
+    "sections": "Sections",
+    "addSection": "Add Section",
+    "sectionTitle": "Section Title",
+    "questions": "Questions",
+    "addQuestion": "Add Question",
+    "questionTitle": "Question Title",
+    "questionType": "Question Type",
+    "radio": "Multiple Choice",
+    "text": "Text Input",
+    "answers": "Answers",
+    "addAnswer": "Add Answer",
+    "answerText": "Answer Text",
+    "score": "Score",
+    "explanation": "Explanation",
+    "detail": "Detail",
+    "edit": "Edit",
+    "delete": "Delete",
+    "cancel": "Cancel",
+    "save": "Save",
+    "summary": "Summary",
+    "generateSurvey": "Generate Survey",
+    "imageUpload": "Image Upload",
+    "uploadImage": "Upload Image"
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "An error occurred",
+    "success": "Success!",
+    "required": "Required",
+    "invalidFormat": "Invalid format",
+    "save": "Save",
+    "cancel": "Cancel",
+    "edit": "Edit",
+    "delete": "Delete",
+    "add": "Add",
+    "language": "Language",
+    "english": "English",
+    "french": "French"
+  },
+  "companyDashboard": {
+    "title": "Company Dashboard",
+    "clients": "Clients",
+    "surveys": "Surveys",
+    "viewDetails": "View Details",
+    "completed": "Completed",
+    "pending": "Pending"
+  }
+}
