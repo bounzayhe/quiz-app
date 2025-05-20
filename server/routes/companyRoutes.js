@@ -3,12 +3,20 @@ import {
   getCompaniesWithStats,
   getQuestionnaireClientsWithResponses,
   registerClient,
+  getScoreTrendsOverTime,
+  calculateClientScores,
 } from "../controllers/companyController.js";
 import { authenticateToken } from "../middlewares/authMiddleware.js";
 
 const router = express.Router();
 
 router.get("/stats", authenticateToken, getCompaniesWithStats);
+router.get("/score-trends", authenticateToken, getScoreTrendsOverTime);
+router.get(
+  "/client/:client_id/scores",
+  authenticateToken,
+  calculateClientScores
+);
 router.get(
   "/clients-responses",
   authenticateToken,

@@ -25,16 +25,19 @@ export const login = asyncHandler(async (req, res) => {
     { expiresIn: "1d" }
   );
 
-  // Store token in the database
-  company.token = token;
-  await company.save();
+  // If user is a company, store the token in the database
+  if (company.role === "company") {
+    const tokenExpiry = new Date();
+    tokenExpiry.setDate(tokenExpiry.getDate() + 1); // Set expiry to 1 day from now
 
-  // Send response with token
+    company.token = token;
+    company.tokenExpiry = tokenExpiry;
+    await company.save();
+  }
+
   res.status(200).json({
     status: "success",
-    data: {
-      role: company.role,
-      token,
-    },
+    role: company.role,
+    token,
   });
 });

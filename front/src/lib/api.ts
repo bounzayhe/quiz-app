@@ -7,6 +7,10 @@ import {
   Survey,
   Section,
 } from "./types";
+import { getToken } from "./auth";
+
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
 
 // Create axios instance with base URL (pointing to our backend server)
 const apiClient = axios.create({
@@ -166,5 +170,26 @@ export const api = {
       console.error("Error creating survey:", error);
       throw new Error("Failed to create survey");
     }
+  },
+
+  createQuestionnaire: async (
+    companyInfo: Partial<Company>,
+    sections: Section[]
+  ) => {
+    const response = await fetch(`${API_BASE_URL}/surveys/generate`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${getToken()}`,
+      },
+      body: JSON.stringify({ companyInfo, sections }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || "Failed to create questionnaire");
+    }
+
+    return response.json();
   },
 };

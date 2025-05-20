@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 
+// Remove the token field from the schema
 const companySchema = new mongoose.Schema({
   fullname: { type: String, required: true, trim: true },
   email: {
@@ -19,10 +20,18 @@ const companySchema = new mongoose.Schema({
     enum: ["admin", "company"],
     default: "company",
   },
-  token: {
-    type: String,
-    default: null,
-  },
+  primaryColor: { type: String },
+  secondaryColor: { type: String },
+  backgroundColor: { type: String },
+  logo: { type: String },
+  representativeName: String,
+  token: { type: String },
+  tokenExpiry: { type: Date },
 });
+
+// Add indexes for frequently queried fields
+// companySchema.index({ email: 1 });
+companySchema.index({ role: 1 });
+companySchema.index({ token: 1 });
 
 export default mongoose.model("Company", companySchema);

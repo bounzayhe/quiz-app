@@ -3,6 +3,7 @@ import Tentative from "../models/Tentative.js";
 import Questionnaire from "../models/Questionnaire.js";
 import Client from "../models/Client.js";
 import Response from "../models/Response.js";
+import mongoose from "mongoose";
 
 export const getCompaniesWithStats = async (req, res) => {
   try {
@@ -198,6 +199,379 @@ export const createTentative = async (req, res) => {
     });
   } catch (error) {
     console.error("Error creating tentative:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+export const getScoreTrendsOverTime = async (req, res) => {
+  try {
+    // Verify company role
+    if (req.user.role !== "company") {
+      return res.status(403).json({ message: "Unauthorized access" });
+    }
+
+    const companyId = req.user.id;
+
+    // Get all questionnaires for this company
+    const questionnaires = await Questionnaire.find({ company_id: companyId });
+    const questionnaireIds = questionnaires.map((q) => q._id);
+
+    const scoreTrends = await Tentative.aggregate([
+      {
+        $match: {
+          questionnaire_id: { $in: questionnaireIds },
+        },
+      },
+      {
+        $lookup: {
+          from: "clients",
+          localField: "client_id",
+          foreignField: "_id",
+          as: "client",
+        },
+      },
+      {
+        $lookup: {
+          from: "questionnaires",
+          localField: "questionnaire_id",
+          foreignField: "_id",
+          as: "questionnaire",
+        },
+      },
+      {
+        $unwind: "$client",
+      },
+      {
+        $unwind: "$questionnaire",
+      },
+      {
+        // Group by month and questionnaire
+        $group: {
+          _id: {
+            month: {
+              $dateToString: { format: "%Y-%m", date: "$date_passage" },
+            },
+            questionnaire_id: "$questionnaire_id",
+            questionnaire_label: "$questionnaire.label",
+          },
+          average_score: { $avg: "$score_total" },
+          max_score: { $max: "$score_total" },
+          min_score: { $min: "$score_total" },
+          attempts_count: { $sum: 1 },
+          // Keep track of top performers
+          top_performers: {
+            $push: {
+              client_name: "$client.fullname",
+              score: "$score_total",
+              date: "$date_passage",
+            },
+          },
+        },
+      },
+      {
+        // Sort top performers and keep only top 3
+        $project: {
+          _id: 1,
+          average_score: 1,
+          max_score: 1,
+          min_score: 1,
+          attempts_count: 1,
+          top_performers: {
+            $slice: [
+              {
+                $sortArray: {
+                  input: "$top_performers",
+                  sortBy: { score: -1 },
+                },
+              },
+              3,
+            ],
+          },
+        },
+      },
+      {
+        // Sort by date and questionnaire
+        $sort: {
+          "_id.month": 1,
+          "_id.questionnaire_label": 1,
+        },
+      },
+    ]);
+
+    // Transform the data for easier frontend consumption
+    const transformedData = scoreTrends.reduce((acc, item) => {
+      const questionnaire = item._id.questionnaire_label;
+      if (!acc[questionnaire]) {
+        acc[questionnaire] = {
+          labels: [],
+          averageScores: [],
+          maxScores: [],
+          minScores: [],
+          topPerformers: {},
+          attemptsCount: [],
+        };
+      }
+
+      acc[questionnaire].labels.push(item._id.month);
+      acc[questionnaire].averageScores.push(
+        Number(item.average_score.toFixed(2))
+      );
+      acc[questionnaire].maxScores.push(item.max_score);
+      acc[questionnaire].minScores.push(item.min_score);
+      acc[questionnaire].topPerformers[item._id.month] = item.top_performers;
+      acc[questionnaire].attemptsCount.push(item.attempts_count);
+
+      return acc;
+    }, {});
+
+    res.status(200).json({
+      status: "success",
+      data: transformedData,
+    });
+  } catch (error) {
+    console.error("Error fetching score trends:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+export const calculateClientScores = async (req, res) => {
+  try {
+    // Verify company role
+    if (req.user.role !== "company") {
+      return res.status(403).json({ message: "Unauthorized access" });
+    }
+
+    const { client_id } = req.params;
+    const companyId = req.user.id;
+
+    // First verify that this client belongs to the company
+    const client = await Client.findOne({
+      _id: client_id,
+      company_id: companyId,
+    });
+
+    if (!client) {
+      return res.status(404).json({
+        status: "error",
+        message: "Client not found or doesn't belong to your company",
+      });
+    }
+
+    // Get all attempts by this client
+    const clientScores = await Tentative.aggregate([
+      {
+        $match: {
+          client_id: new mongoose.Types.ObjectId(client_id),
+        },
+      },
+      {
+        // Get the questionnaire details
+        $lookup: {
+          from: "questionnaires",
+          localField: "questionnaire_id",
+          foreignField: "_id",
+          as: "questionnaire",
+        },
+      },
+      {
+        $unwind: "$questionnaire",
+      },
+      {
+        // Get all sections for this questionnaire
+        $lookup: {
+          from: "sections",
+          localField: "questionnaire_id",
+          foreignField: "questionnaire_id",
+          as: "sections",
+        },
+      },
+      {
+        // Get all responses for this tentative
+        $lookup: {
+          from: "responses",
+          localField: "_id",
+          foreignField: "tentative_id",
+          as: "responses",
+        },
+      },
+      {
+        // Get all questions
+        $lookup: {
+          from: "questions",
+          localField: "responses.question_id",
+          foreignField: "_id",
+          as: "questions",
+        },
+      },
+      {
+        $unwind: "$sections",
+      },
+      {
+        // Calculate scores for each section
+        $project: {
+          tentative_id: "$_id",
+          date_passage: 1,
+          section_id: "$sections._id",
+          section_label: "$sections.label",
+          section_ordre: "$sections.ordre",
+          questionnaire_label: "$questionnaire.label",
+          questionnaire_id: "$questionnaire._id",
+          responses: {
+            $filter: {
+              input: "$responses",
+              as: "response",
+              cond: {
+                $in: [
+                  "$$response.question_id",
+                  {
+                    $map: {
+                      input: {
+                        $filter: {
+                          input: "$questions",
+                          as: "question",
+                          cond: {
+                            $eq: ["$$question.section_id", "$sections._id"],
+                          },
+                        },
+                      },
+                      as: "question",
+                      in: "$$question._id",
+                    },
+                  },
+                ],
+              },
+            },
+          },
+        },
+      },
+      {
+        // Calculate section scores
+        $project: {
+          tentative_id: 1,
+          date_passage: 1,
+          section_id: 1,
+          section_label: 1,
+          section_ordre: 1,
+          questionnaire_label: 1,
+          questionnaire_id: 1,
+          section_score: { $sum: "$responses.score" },
+          max_possible_score: { $size: "$responses" },
+          response_count: { $size: "$responses" },
+        },
+      },
+      {
+        // Group by tentative to calculate totals for each attempt
+        $group: {
+          _id: {
+            tentative_id: "$tentative_id",
+            questionnaire_id: "$questionnaire_id",
+          },
+          date_passage: { $first: "$date_passage" },
+          questionnaire_label: { $first: "$questionnaire_label" },
+          sections: {
+            $push: {
+              section_id: "$section_id",
+              label: "$section_label",
+              ordre: "$section_ordre",
+              score: "$section_score",
+              max_possible_score: "$max_possible_score",
+              response_count: "$response_count",
+              score_percentage: {
+                $multiply: [
+                  {
+                    $divide: [
+                      "$section_score",
+                      { $max: ["$max_possible_score", 1] },
+                    ],
+                  },
+                  100,
+                ],
+              },
+            },
+          },
+          total_score: { $sum: "$section_score" },
+          total_possible_score: { $sum: "$max_possible_score" },
+          total_responses: { $sum: "$response_count" },
+        },
+      },
+      {
+        // Calculate overall scores and sort sections
+        $project: {
+          _id: 0,
+          tentative_id: "$_id.tentative_id",
+          questionnaire_id: "$_id.questionnaire_id",
+          date_passage: 1,
+          questionnaire_label: 1,
+          sections: {
+            $sortArray: {
+              input: "$sections",
+              sortBy: { ordre: 1 },
+            },
+          },
+          total_score: 1,
+          total_possible_score: 1,
+          total_responses: 1,
+          overall_score_percentage: {
+            $multiply: [
+              {
+                $divide: [
+                  "$total_score",
+                  { $max: ["$total_possible_score", 1] },
+                ],
+              },
+              100,
+            ],
+          },
+        },
+      },
+      {
+        // Sort by date, most recent first
+        $sort: {
+          date_passage: -1,
+        },
+      },
+      {
+        // Group all attempts by questionnaire
+        $group: {
+          _id: "$questionnaire_id",
+          questionnaire_label: { $first: "$questionnaire_label" },
+          attempts: {
+            $push: {
+              tentative_id: "$tentative_id",
+              date_passage: "$date_passage",
+              sections: "$sections",
+              total_score: "$total_score",
+              total_possible_score: "$total_possible_score",
+              total_responses: "$total_responses",
+              overall_score_percentage: "$overall_score_percentage",
+            },
+          },
+          average_score: { $avg: "$overall_score_percentage" },
+          best_score: { $max: "$overall_score_percentage" },
+          attempt_count: { $sum: 1 },
+        },
+      },
+    ]);
+
+    if (!clientScores.length) {
+      return res.status(200).json({
+        status: "success",
+        data: {
+          client_name: client.fullname,
+          questionnaires: [],
+        },
+      });
+    }
+
+    res.status(200).json({
+      status: "success",
+      data: {
+        client_name: client.fullname,
+        questionnaires: clientScores,
+      },
+    });
+  } catch (error) {
+    console.error("Error calculating client scores:", error);
     res.status(500).json({ message: "Server error" });
   }
 };

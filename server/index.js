@@ -4,6 +4,7 @@ import cors from "cors";
 import connectDB from "./config/db.js";
 import authRoutes from "./routes/authRoutes.js";
 import companyRoutes from "./routes/companyRoutes.js";
+import surveyRoutes from "./routes/surveyRoutes.js";
 import { errorHandler } from "./middlewares/errorMiddleware.js";
 
 dotenv.config();
@@ -11,9 +12,10 @@ dotenv.config();
 const app = express();
 
 // Middleware
+// Update CORS configuration to use environment variable
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: process.env.FRONTEND_URL || "http://localhost:5173",
     credentials: true,
   })
 );
@@ -25,6 +27,7 @@ connectDB();
 // Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/companies", companyRoutes);
+app.use("/api/surveys", surveyRoutes);
 
 // Health check endpoint
 app.get("/api/health", (req, res) => {

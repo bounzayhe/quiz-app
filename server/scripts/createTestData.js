@@ -1,12 +1,12 @@
 import mongoose from "mongoose";
 import dotenv from "dotenv";
-import Company from "./models/Company.js";
-import Client from "./models/Client.js";
-import Questionnaire from "./models/Questionnaire.js";
-import Section from "./models/Section.js";
-import Question from "./models/Question.js";
-import Tentative from "./models/Tentative.js";
-import Response from "./models/Response.js";
+import Company from "../models/Company.js";
+import Client from "../models/Client.js";
+import Questionnaire from "../models/Questionnaire.js";
+import Section from "../models/Section.js";
+import Question from "../models/Question.js";
+import Tentative from "../models/Tentative.js";
+import Response from "../models/Response.js";
 
 dotenv.config();
 

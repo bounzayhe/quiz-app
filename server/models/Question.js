@@ -12,10 +12,14 @@ const questionSchema = new mongoose.Schema(
       required: true,
       enum: ["radio", "text"],
     },
-    ordre: { type: Number, required: true },
+    ordre: { type: Number, required: false },
     value: { type: String, required: true, trim: true },
   },
   { timestamps: true }
 );
+
+// Add index for frequently queried fields
+questionSchema.index({ section_id: 1 });
+questionSchema.index({ ordre: 1 });
 
 export default mongoose.model("Question", questionSchema);

@@ -14,7 +14,8 @@ const responseSchema = new mongoose.Schema({
   tentative_id: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Tentative",
-    required: true,
+    required: false, // Change to false
+    default: null,
   },
 });
 
