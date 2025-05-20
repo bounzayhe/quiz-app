@@ -3,6 +3,8 @@ import {
   generateSurvey,
   getAllSurveys,
   updateSurvey,
+  getQuestionnaireSection,
+  getQuestionnaireSections,
 } from "../controllers/surveyController.js";
 import { authenticateToken } from "../middlewares/authMiddleware.js";
 
@@ -16,5 +18,11 @@ router.get("/", authenticateToken, getAllSurveys);
 
 // Route to update a survey (admin only)
 router.put("/:surveyId", authenticateToken, updateSurvey);
+
+// Route to get all sections of a questionnaire
+router.get("/:questionnaireId/sections", getQuestionnaireSections);
+
+// Route to get a specific section with its questions and responses
+router.get("/:questionnaireId/sections/:sectionId", getQuestionnaireSection);
 
 export default router;

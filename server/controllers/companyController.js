@@ -67,6 +67,20 @@ export const getQuestionnaireClientsWithResponses = async (req, res) => {
 
     const companyId = req.user.id;
 
+    // Get pagination parameters from query
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    // First get total count for pagination
+    const totalCount = await Tentative.countDocuments({
+      questionnaire_id: {
+        $in: await Questionnaire.find({ company_id: companyId }).distinct(
+          "_id"
+        ),
+      },
+    });
+
     const clients = await Tentative.aggregate([
       {
         $match: {
@@ -132,9 +146,20 @@ export const getQuestionnaireClientsWithResponses = async (req, res) => {
           },
         },
       },
+      // Add pagination
+      { $skip: skip },
+      { $limit: limit },
     ]);
 
-    res.status(200).json(clients);
+    res.status(200).json({
+      data: clients,
+      pagination: {
+        total: totalCount,
+        page,
+        limit,
+        totalPages: Math.ceil(totalCount / limit),
+      },
+    });
   } catch (error) {
     console.error("Error fetching clients with responses:", error);
     res.status(500).json({ message: "Server error" });

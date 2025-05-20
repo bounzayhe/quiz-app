@@ -5,6 +5,7 @@ import Response from "../models/Response.js";
 import Company from "../models/Company.js";
 import { generateToken } from "../utils/token.js";
 import { APIError } from "../middlewares/errorMiddleware.js";
+import mongoose from "mongoose";
 
 export const generateSurvey = async (req, res) => {
   try {
@@ -184,42 +185,50 @@ export const getAllSurveys = async (req, res) => {
             backgroundColor: 1,
           },
           sections: {
-            _id: 1,
-            label: 1,
-            ordre: 1,
-            picture: 1,
-            questions: {
-              $map: {
-                input: {
-                  $filter: {
-                    input: "$questions",
-                    as: "q",
-                    cond: { $eq: ["$$q.section_id", "$$section._id"] },
-                  },
-                },
-                as: "question",
-                in: {
-                  _id: "$$question._id",
-                  type: "$$question.type",
-                  value: "$$question.value",
-                  ordre: "$$question.ordre",
-                  responses: {
-                    $map: {
-                      input: {
-                        $filter: {
-                          input: "$responses",
-                          as: "r",
-                          cond: { $eq: ["$$r.question_id", "$$question._id"] },
-                        },
+            $map: {
+              input: "$sections",
+              as: "section",
+              in: {
+                _id: "$$section._id",
+                label: "$$section.label",
+                ordre: "$$section.ordre",
+                picture: "$$section.picture",
+                questions: {
+                  $map: {
+                    input: {
+                      $filter: {
+                        input: "$questions",
+                        as: "q",
+                        cond: { $eq: ["$$q.section_id", "$$section._id"] },
                       },
-                      as: "response",
-                      in: {
-                        _id: "$$response._id",
-                        value: "$$response.value",
-                        score: "$$response.score",
-                        ordre: "$$response.ordre",
-                        explication: "$$response.explication",
-                        details: "$$response.details",
+                    },
+                    as: "question",
+                    in: {
+                      _id: "$$question._id",
+                      type: "$$question.type",
+                      value: "$$question.value",
+                      ordre: "$$question.ordre",
+                      responses: {
+                        $map: {
+                          input: {
+                            $filter: {
+                              input: "$responses",
+                              as: "r",
+                              cond: {
+                                $eq: ["$$r.question_id", "$$question._id"],
+                              },
+                            },
+                          },
+                          as: "response",
+                          in: {
+                            _id: "$$response._id",
+                            value: "$$response.value",
+                            score: "$$response.score",
+                            ordre: "$$response.ordre",
+                            explication: "$$response.explication",
+                            details: "$$response.details",
+                          },
+                        },
                       },
                     },
                   },
@@ -359,6 +368,121 @@ export const updateSurvey = async (req, res) => {
     res.status(error.statusCode || 500).json({
       success: false,
       message: error.message || "Error updating survey",
+    });
+  }
+};
+
+export const getQuestionnaireSection = async (req, res) => {
+  try {
+    const { questionnaireId, sectionId } = req.params;
+
+    // Find the questionnaire and verify it exists
+    const questionnaire = await Questionnaire.findById(questionnaireId);
+    if (!questionnaire) {
+      throw new APIError("Questionnaire not found", 404);
+    }
+
+    // Get the specific section with its questions and responses
+    const section = await Section.aggregate([
+      {
+        $match: {
+          _id: new mongoose.Types.ObjectId(sectionId),
+          questionnaire_id: new mongoose.Types.ObjectId(questionnaireId),
+        },
+      },
+      {
+        $lookup: {
+          from: "questions",
+          localField: "_id",
+          foreignField: "section_id",
+          as: "questions",
+        },
+      },
+      {
+        $lookup: {
+          from: "responses",
+          let: { questionIds: "$questions._id" },
+          pipeline: [
+            {
+              $match: {
+                $expr: { $in: ["$question_id", "$$questionIds"] },
+              },
+            },
+          ],
+          as: "responses",
+        },
+      },
+      {
+        $project: {
+          _id: 1,
+          label: 1,
+          ordre: 1,
+          picture: 1,
+          questions: {
+            $map: {
+              input: "$questions",
+              as: "question",
+              in: {
+                _id: "$$question._id",
+                type: "$$question.type",
+                value: "$$question.value",
+                ordre: "$$question.ordre",
+                responses: {
+                  $filter: {
+                    input: "$responses",
+                    as: "response",
+                    cond: { $eq: ["$$response.question_id", "$$question._id"] },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    ]);
+
+    if (!section || section.length === 0) {
+      throw new APIError("Section not found", 404);
+    }
+
+    res.status(200).json({
+      success: true,
+      data: section[0],
+    });
+  } catch (error) {
+    console.error("Error fetching questionnaire section:", error);
+    res.status(error.statusCode || 500).json({
+      success: false,
+      message: error.message || "Error fetching questionnaire section",
+    });
+  }
+};
+
+// Add a function to get section list
+export const getQuestionnaireSections = async (req, res) => {
+  try {
+    const { questionnaireId } = req.params;
+
+    // Find the questionnaire and verify it exists
+    const questionnaire = await Questionnaire.findById(questionnaireId);
+    if (!questionnaire) {
+      throw new APIError("Questionnaire not found", 404);
+    }
+
+    // Get all sections for this questionnaire
+    const sections = await Section.find({ questionnaire_id: questionnaireId })
+      .select("_id label ordre picture")
+      .sort({ ordre: 1 });
+
+    res.status(200).json({
+      success: true,
+      data: sections,
+    });
+  } catch (error) {
+    console.error("Error fetching questionnaire sections:", error);
+    res.status(error.statusCode || 500).json({
+      success: false,
+      message: error.message || "Error fetching questionnaire sections",
     });
   }
 };
