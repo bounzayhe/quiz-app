@@ -22,7 +22,10 @@ router.get(
   authenticateToken,
   getQuestionnaireClientsWithResponses
 );
-router.post("/register-client", registerClient);
+router.post(
+  "/:companyId/questionnaires/:questionnaireId/inscription",
+  registerClient
+);
 
 // Remove the duplicate route definition below
 // router.get("/stats", authMiddleware, (req, res) => getCompaniesStats(req, res));

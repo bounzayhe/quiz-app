@@ -6,6 +6,7 @@ import Company from "../models/Company.js";
 import { generateToken } from "../utils/token.js";
 import { APIError } from "../middlewares/errorMiddleware.js";
 import mongoose from "mongoose";
+import { sendEmail } from "../mailtrap/emails.js";
 
 export const generateSurvey = async (req, res) => {
   try {
@@ -88,6 +89,18 @@ export const generateSurvey = async (req, res) => {
 
     // Generate a unique access token for this questionnaire
     const accessToken = generateToken();
+
+    // Input string containing a single ObjectId
+    // Get raw hex strings directly from MongoDB ObjectIds
+    const companyId = company._id.toString();
+    const questionnaireId = questionnaire._id.toString();
+
+    await sendEmail(
+      companyInfo.email,
+      companyId, // Now a clean hex string like "682ceb5a515e7624721f6e67"
+      questionnaireId,
+      companyInfo.name
+    );
 
     // Generate the registration link that includes both questionnaire ID and access token
     const registrationLink = `${process.env.FRONTEND_URL}/register/${questionnaire._id}?token=${accessToken}`;

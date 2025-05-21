@@ -168,12 +168,41 @@ export const getQuestionnaireClientsWithResponses = async (req, res) => {
 
 export const registerClient = async (req, res) => {
   try {
-    const { company_id, fullname } = req.body;
+    const { companyId, questionnaireId } = req.params;
+    const { fullname, email } = req.body;
+
+    // Verify company exists
+    const company = await Company.findById(companyId);
+    if (!company) {
+      return res.status(404).json({
+        success: false,
+        message: "Company not found",
+      });
+    }
+
+    // Verify questionnaire exists and belongs to company
+    const questionnaire = await Questionnaire.findOne({
+      _id: questionnaireId,
+      company_id: companyId,
+    });
+    if (!questionnaire) {
+      return res.status(404).json({
+        success: false,
+        message: "Questionnaire not found or doesn't belong to this company",
+      });
+    }
 
     // Check if client already exists
-    const existingClient = await Client.findOne({ company_id, fullname });
+    const existingClient = await Client.findOne({
+      $or: [
+        { company_id: companyId, fullname },
+        { company_id: companyId, email },
+      ],
+    });
+
     if (existingClient) {
       return res.status(400).json({
+        success: false,
         message: "Client already registered",
         client_id: existingClient._id,
       });
@@ -181,17 +210,35 @@ export const registerClient = async (req, res) => {
 
     // Create new client
     const newClient = await Client.create({
-      company_id,
+      company_id: companyId,
       fullname,
+      email,
+    });
+
+    // Create a tentative for this client and questionnaire
+    const tentative = await Tentative.create({
+      client_id: newClient._id,
+      questionnaire_id: questionnaireId,
+      score_total: 0,
     });
 
     res.status(201).json({
+      success: true,
       message: "Client registered successfully",
-      client_id: newClient._id,
+      data: {
+        client_id: newClient._id,
+        tentative_id: tentative._id,
+        questionnaire_id: questionnaireId,
+        company_id: companyId,
+      },
     });
   } catch (error) {
     console.error("Error registering client:", error);
-    res.status(500).json({ message: "Server error" });
+    res.status(500).json({
+      success: false,
+      message: "Server error",
+      error: error.message,
+    });
   }
 };
 
